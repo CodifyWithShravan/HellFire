@@ -6,12 +6,16 @@
 
 *AI-powered Battle Cards • Real-time Market Signals • Smart Outreach*
 
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-marketmind--black.vercel.app-00C7B7?style=for-the-badge)](https://marketmind-black.vercel.app)
+
 [![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Groq](https://img.shields.io/badge/Groq-LLaMA%203.3-orange?style=for-the-badge)](https://groq.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 
 ---
+
+### 🌐 **[Try the Live Demo →](https://marketmind-black.vercel.app)**
 
 [Features](#-features) • [Quick Start](#-quick-start) • [API Keys](#-api-keys-setup) • [Tech Stack](#-tech-stack)
 
