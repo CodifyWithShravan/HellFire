@@ -217,6 +217,25 @@ export default function LeadScorer() {
                     </select>
                 </div>
 
+                {/* Try Example Button */}
+                <div className="flex items-center gap-4">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setLeadName('Sarah Johnson');
+                            setCompany('Stripe');
+                            setBudget('$75,000');
+                            setTimeline('1-3 months');
+                            setUrgency('Critical - Must solve now');
+                            setAuthority('Final decision maker');
+                            setNeedFit('Perfect fit - exact use case');
+                        }}
+                        className="text-sm text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+                    >
+                        ✨ Try Example (High-Potential Lead)
+                    </button>
+                </div>
+
                 <button
                     type="submit"
                     disabled={loading || !leadName.trim() || !company.trim()}

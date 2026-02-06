@@ -103,34 +103,43 @@ export default function CompanyIntel() {
     return (
         <div className="space-y-8">
             {/* Search Form */}
-            <form onSubmit={handleSubmit} className="glass-card p-4 flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 relative">
-                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                    <input
-                        type="text"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="Enter company name (e.g., Tesla, Microsoft, TCS)..."
-                        className="war-room-input w-full pl-12"
-                        disabled={loading}
-                    />
+            <form onSubmit={handleSubmit} className="glass-card p-4 space-y-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 relative">
+                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        <input
+                            type="text"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Enter company name (e.g., Tesla, Microsoft, TCS)..."
+                            className="war-room-input w-full pl-12"
+                            disabled={loading}
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={loading || !companyName.trim()}
+                        className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Analyzing...
+                            </>
+                        ) : (
+                            <>
+                                <Target className="w-5 h-5" />
+                                Generate Intel
+                            </>
+                        )}
+                    </button>
                 </div>
                 <button
-                    type="submit"
-                    disabled={loading || !companyName.trim()}
-                    className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap"
+                    type="button"
+                    onClick={() => setCompanyName('Apple')}
+                    className="text-sm text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors"
                 >
-                    {loading ? (
-                        <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Analyzing...
-                        </>
-                    ) : (
-                        <>
-                            <Target className="w-5 h-5" />
-                            Generate Intel
-                        </>
-                    )}
+                    ✨ Try Example (Apple Inc.)
                 </button>
             </form>
 

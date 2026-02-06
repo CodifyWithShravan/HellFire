@@ -164,6 +164,22 @@ export default function CampaignGenerator() {
                     />
                 </div>
 
+                {/* Try Example Button */}
+                <div className="flex items-center gap-4">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setProductName('Tesla Model Y');
+                            setProductDescription('All-electric compact SUV with autopilot, 330-mile range, and the safest SUV rating. Features include over-the-air updates, premium audio, and zero emissions.');
+                            setTargetAudience('Tech-savvy professionals aged 30-50 interested in sustainability, innovation, and premium vehicles');
+                            setPlatform('LinkedIn');
+                        }}
+                        className="text-sm text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors"
+                    >
+                        ✨ Try Example (Tesla Campaign)
+                    </button>
+                </div>
+
                 <button
                     type="submit"
                     disabled={loading || !productName.trim() || !productDescription.trim() || !targetAudience.trim()}

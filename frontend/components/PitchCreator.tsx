@@ -145,6 +145,23 @@ export default function PitchCreator() {
                     </div>
                 </div>
 
+                {/* Try Example Button */}
+                <div className="flex items-center gap-4">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setProductName('Salesforce CRM');
+                            setProductDescription('AI-powered customer relationship management platform with sales automation, analytics dashboards, and seamless integrations.');
+                            setProspectRole('VP of Sales');
+                            setProspectCompany('HubSpot');
+                            setCompanySize('Enterprise (1000+)');
+                        }}
+                        className="text-sm text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
+                    >
+                        ✨ Try Example (Salesforce Pitch)
+                    </button>
+                </div>
+
                 <button
                     type="submit"
                     disabled={loading || !productName.trim() || !productDescription.trim() || !prospectRole.trim() || !prospectCompany.trim()}
