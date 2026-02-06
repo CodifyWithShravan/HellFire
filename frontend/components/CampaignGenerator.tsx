@@ -37,7 +37,7 @@ interface CampaignResult {
     cta_suggestions: string[];
 }
 
-const PLATFORMS = ['LinkedIn', 'Twitter', 'Facebook', 'Instagram'];
+const PLATFORMS = ['LinkedIn', 'Twitter', 'Facebook', 'Instagram', 'YouTube'];
 
 const getContentIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -130,8 +130,8 @@ export default function CampaignGenerator() {
                                     type="button"
                                     onClick={() => setPlatform(p)}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${platform === p
-                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
-                                            : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:border-slate-600'
+                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                                        : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:border-slate-600'
                                         }`}
                                 >
                                     {p}

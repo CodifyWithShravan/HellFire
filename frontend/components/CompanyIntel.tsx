@@ -201,7 +201,7 @@ export default function CompanyIntel() {
                                 <div className="p-4 rounded-lg bg-slate-800/50">
                                     <p className="text-xs text-slate-500 uppercase mb-1">52W Change</p>
                                     <p className={`text-2xl font-bold mono ${result.financial_health.change_52w.startsWith('+') ? 'text-emerald-400' :
-                                            result.financial_health.change_52w.startsWith('-') ? 'text-red-400' : 'text-slate-100'
+                                        result.financial_health.change_52w.startsWith('-') ? 'text-red-400' : 'text-slate-100'
                                         }`}>{result.financial_health.change_52w}</p>
                                 </div>
                                 <div className="p-4 rounded-lg bg-slate-800/50">
@@ -249,13 +249,13 @@ export default function CompanyIntel() {
                             </div>
                             <div className="space-y-4">
                                 <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
-                                    <p className="text-slate-200 leading-relaxed italic">"{result.cold_email}"</p>
+                                    <p className="text-slate-200 leading-relaxed italic">&ldquo;{result.cold_email}&rdquo;</p>
                                 </div>
                                 <button
                                     onClick={handleCopyEmail}
                                     className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${copied
-                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                            : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 border border-slate-600'
+                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                        : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700 border border-slate-600'
                                         }`}
                                 >
                                     {copied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Email</>}

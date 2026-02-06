@@ -200,7 +200,7 @@ export default function PitchCreator() {
                             </button>
                         </div>
                         <div className="p-4 rounded-lg bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
-                            <p className="text-lg text-slate-200 leading-relaxed italic">"{result.elevator_pitch}"</p>
+                            <p className="text-lg text-slate-200 leading-relaxed italic">&ldquo;{result.elevator_pitch}&rdquo;</p>
                         </div>
                     </div>
 
