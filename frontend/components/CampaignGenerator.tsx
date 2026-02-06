@@ -77,7 +77,7 @@ export default function CampaignGenerator() {
         setResult(null);
 
         try {
-            const response = await fetch('http://localhost:8000/campaign', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/campaign`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

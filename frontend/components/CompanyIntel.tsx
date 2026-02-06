@@ -75,7 +75,7 @@ export default function CompanyIntel() {
         setResult(null);
 
         try {
-            const response = await fetch('http://localhost:8000/intel', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/intel`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ company_name: companyName.trim() }),
