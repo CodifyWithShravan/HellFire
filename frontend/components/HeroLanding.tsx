@@ -259,7 +259,7 @@ export default function HeroLanding({ onGetStarted }: HeroLandingProps) {
                     MarketMind AI • Built for the Modern Sales Team
                 </p>
                 <a
-                    href="https://github.com/yourusername/MarketMind"
+                    href="https://github.com/CodifyWithShravan/HellFire"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-slate-500 hover:text-cyan-400 transition-colors"
