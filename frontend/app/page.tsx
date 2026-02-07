@@ -39,14 +39,22 @@ export default function MarketAISuite() {
   }, []);
 
   const handleGetStarted = () => {
+    // Trigger hyperspace warp effect
+    if (typeof window !== 'undefined' && (window as any).triggerParticleWarp) {
+      (window as any).triggerParticleWarp();
+    }
+    
     setIsTransitioning(true);
     sessionStorage.setItem('marketmind_visited', 'true');
 
-    // Smooth transition
+    // Wait for warp effect, then transition
     setTimeout(() => {
       setShowLanding(false);
+    }, 1500);
+    
+    setTimeout(() => {
       setIsTransitioning(false);
-    }, 500);
+    }, 2000);
   };
 
   const handleBackToLanding = () => {
@@ -58,18 +66,44 @@ export default function MarketAISuite() {
     }, 300);
   };
 
-  // Show Landing Page
+  // Show Landing Page  
   if (showLanding) {
     return (
-      <div className={`transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-        <HeroLanding onGetStarted={handleGetStarted} />
-      </div>
+      <>
+        {/* White flash overlay during warp */}
+        <div 
+          className={`fixed inset-0 z-50 pointer-events-none transition-opacity duration-700 ${
+            isTransitioning ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{ 
+            background: 'radial-gradient(circle at center, rgba(6,182,212,0.4) 0%, rgba(139,92,246,0.2) 40%, transparent 70%)',
+          }}
+        />
+        
+        <div 
+          className={`transition-all duration-1000 ease-out ${
+            isTransitioning 
+              ? 'opacity-0 scale-[1.5]' 
+              : 'opacity-100 scale-100'
+          }`}
+          style={{ transformOrigin: 'center center' }}
+        >
+          <HeroLanding onGetStarted={handleGetStarted} />
+        </div>
+      </>
     );
   }
 
   // Main Dashboard
   return (
-    <main className={`min-h-screen p-4 md:p-8 relative transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+    <main 
+      className={`min-h-screen p-4 md:p-8 relative transition-all duration-700 ease-out ${
+        isTransitioning 
+          ? 'opacity-0 scale-95' 
+          : 'opacity-100 scale-100'
+      }`}
+      style={{ transformOrigin: 'center top' }}
+    >
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <header className="mb-10 pt-4">

@@ -15,6 +15,13 @@ import {
     Layers,
     Rocket
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for Three.js component (client-side only)
+const ParticleNetwork = dynamic(() => import('./ParticleNetwork'), {
+    ssr: false,
+    loading: () => null
+});
 
 interface HeroLandingProps {
     onGetStarted: () => void;
@@ -87,8 +94,11 @@ export default function HeroLanding({ onGetStarted }: HeroLandingProps) {
 
     return (
         <div className={`min-h-screen flex flex-col transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-            {/* Floating Orbs Background */}
-            <div className="floating-orbs">
+            {/* Three.js Particle Network Background */}
+            <ParticleNetwork />
+
+            {/* Floating Orbs Background (subtle, behind particles) */}
+            <div className="floating-orbs opacity-30">
                 <div className="orb orb-1" />
                 <div className="orb orb-2" />
                 <div className="orb orb-3" />
