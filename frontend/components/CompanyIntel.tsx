@@ -33,12 +33,20 @@ interface Strategy {
     reasoning: string;
 }
 
+interface ProductFit {
+    score: number;
+    verdict: string;
+    reasons: string[];
+    suggested_angle: string;
+}
+
 interface CompanyIntelResult {
     company_name: string;
     financial_health: FinancialHealth;
     news: NewsItem[];
     strategy: Strategy;
     cold_email: string;
+    product_fit?: ProductFit;
 }
 
 const getSentimentBadge = (sentiment: string) => {
@@ -61,6 +69,7 @@ const getHealthColor = (health: string) => {
 
 export default function CompanyIntel() {
     const [companyName, setCompanyName] = useState('');
+    const [productContext, setProductContext] = useState('');
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<CompanyIntelResult | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -78,7 +87,10 @@ export default function CompanyIntel() {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/intel`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ company_name: companyName.trim() }),
+                body: JSON.stringify({
+                    company_name: companyName.trim(),
+                    product_context: productContext.trim() || null
+                }),
             });
 
             if (!response.ok) throw new Error('Failed to fetch company intel');
@@ -134,12 +146,33 @@ export default function CompanyIntel() {
                         )}
                     </button>
                 </div>
+
+                {/* Optional: Your Product for Fit Analysis */}
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={productContext}
+                        onChange={(e) => setProductContext(e.target.value)}
+                        placeholder="Optional: Your product (e.g., AI Sales Tool) for fit analysis..."
+                        className="war-room-input w-full pl-4 pr-12 text-sm"
+                        disabled={loading}
+                    />
+                    {productContext && (
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-amber-400">
+                            ✨ Fit Analysis ON
+                        </span>
+                    )}
+                </div>
+
                 <button
                     type="button"
-                    onClick={() => setCompanyName('Apple')}
+                    onClick={() => {
+                        setCompanyName('Apple');
+                        setProductContext('AI Sales Automation Tool');
+                    }}
                     className="text-sm text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors"
                 >
-                    ✨ Try Example (Apple Inc.)
+                    ✨ Try Example (Apple + AI Sales Tool)
                 </button>
             </form>
 
@@ -167,6 +200,54 @@ export default function CompanyIntel() {
                             <span className="text-slate-400">{result.financial_health.sector}</span>
                         </div>
                     </div>
+
+                    {/* Product Fit Analysis - Only shown when product_context was provided */}
+                    {result.product_fit && (
+                        <div className="glass-card p-6 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent animate-scale-in">
+                            <div className="flex items-start gap-4">
+                                {/* Fit Score Circle */}
+                                <div className={`flex-shrink-0 w-20 h-20 rounded-full flex flex-col items-center justify-center ${result.product_fit.score >= 8 ? 'bg-emerald-500/20 border-2 border-emerald-500/50' :
+                                        result.product_fit.score >= 6 ? 'bg-cyan-500/20 border-2 border-cyan-500/50' :
+                                            result.product_fit.score >= 4 ? 'bg-amber-500/20 border-2 border-amber-500/50' :
+                                                'bg-red-500/20 border-2 border-red-500/50'
+                                    }`}>
+                                    <span className={`text-2xl font-bold ${result.product_fit.score >= 8 ? 'text-emerald-400' :
+                                            result.product_fit.score >= 6 ? 'text-cyan-400' :
+                                                result.product_fit.score >= 4 ? 'text-amber-400' :
+                                                    'text-red-400'
+                                        }`}>{result.product_fit.score}/10</span>
+                                    <span className="text-xs text-slate-500">Fit Score</span>
+                                </div>
+
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <h3 className="text-lg font-bold text-slate-100">Product Fit Analysis</h3>
+                                        <span className={`badge ${result.product_fit.verdict.includes('Excellent') ? 'badge-positive' :
+                                                result.product_fit.verdict.includes('Good') ? 'bg-cyan-500/20 text-cyan-400' :
+                                                    result.product_fit.verdict.includes('Moderate') ? 'badge-amber' :
+                                                        'badge-negative'
+                                            }`}>
+                                            {result.product_fit.verdict}
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-2 mb-4">
+                                        {result.product_fit.reasons.map((reason, i) => (
+                                            <div key={i} className="flex items-start gap-2">
+                                                <span className="text-emerald-400">✓</span>
+                                                <span className="text-sm text-slate-300">{reason}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                                        <p className="text-xs text-amber-400 font-medium mb-1">💡 Suggested Approach</p>
+                                        <p className="text-sm text-slate-300">{result.product_fit.suggested_angle}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Market Signals */}

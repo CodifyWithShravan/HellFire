@@ -97,10 +97,15 @@ class LeadResponse(BaseModel):
 def parse_json_response(response_text: str) -> dict:
     """Clean and parse JSON from LLM response"""
     text = response_text.strip()
-    # Remove markdown code blocks
+    # Remove markdown code blocks if present
     if text.startswith("```"):
-        text = re.sub(r'^```json?\s*', '', text)
+        text = re.sub(r'^```(?:json)?\s*', '', text)
         text = re.sub(r'\s*```$', '', text)
+    # If still not valid JSON, try to extract JSON object from the text
+    if not text.startswith('{'):
+        json_match = re.search(r'\{[\s\S]*\}', text)
+        if json_match:
+            text = json_match.group(0)
     return json.loads(text)
 
 def generate_with_groq(prompt: str, max_tokens: int = 2000) -> str:
@@ -272,8 +277,7 @@ async def score_lead(request: LeadRequest):
     if not request.lead_name.strip():
         raise HTTPException(status_code=400, detail="Lead name is required")
     
-    prompt = f"""You are a senior sales operations analyst specializing in lead qualification and scoring.
-Analyze this lead and provide a comprehensive qualification assessment:
+    prompt = f"""You are a senior sales operations analyst. Score this lead ACCURATELY based on the ACTUAL values provided.
 
 LEAD INFORMATION:
 - Name: {request.lead_name}
@@ -284,30 +288,62 @@ LEAD INFORMATION:
 - Decision Authority: {request.decision_authority}
 - Need/Fit: {request.need_fit}
 
-Score this lead using BANT+F methodology (Budget, Authority, Need, Timeline + Fit).
-Provide:
-1. An overall score from 0-100
-2. Individual scores for each dimension (0-20 each)
-3. Detailed reasoning for the score
-4. Conversion probability (Low/Medium/High/Very High)
-5. Recommended next action
+STRICT SCORING RULES (0-20 for each dimension):
+
+BUDGET SCORING (be realistic about deal sizes):
+- Under $100: 2-4/20 (extremely low, likely not serious)
+- $100-$500: 5-8/20 (very small budget)
+- $500-$2,000: 9-12/20 (small business budget)
+- $2,000-$10,000: 13-16/20 (decent budget)
+- $10,000-$50,000: 17-19/20 (strong budget)
+- Over $50,000: 20/20 (enterprise budget)
+
+AUTHORITY SCORING:
+- No authority/unknown: 2-5/20
+- Influencer only: 6-10/20
+- Part of committee: 11-14/20
+- Key decision maker: 15-17/20
+- Final decision maker: 18-20/20
+
+NEED/FIT SCORING:
+- No clear need: 2-5/20
+- Nice to have: 6-10/20
+- Would help: 11-14/20
+- Strong need: 15-17/20
+- Perfect/exact fit: 18-20/20
+
+TIMELINE SCORING:
+- No timeline/undefined: 2-5/20
+- 6+ months: 6-10/20
+- 3-6 months: 11-14/20
+- 1-3 months: 15-17/20
+- Immediate: 18-20/20
+
+URGENCY SCORING:
+- No urgency: 2-5/20
+- Low: 6-10/20
+- Medium: 11-14/20
+- High: 15-17/20
+- Critical: 18-20/20
+
+OVERALL SCORE = Sum of all dimension scores
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {{
-    "score": 85,
+    "score": 45,
     "score_breakdown": {{
-        "budget": 18,
-        "authority": 16,
-        "need": 19,
-        "timeline": 17,
-        "fit": 15
+        "budget": 4,
+        "authority": 18,
+        "need": 20,
+        "timeline": 15,
+        "fit": 20
     }},
-    "reasoning": "Detailed analysis of why this lead received this score...",
-    "conversion_probability": "High",
-    "recommended_action": "Specific action to take with this lead..."
+    "reasoning": "Despite having final decision authority and perfect need/fit, the extremely low budget of only $75 severely limits conversion potential. The lead has urgent timeline but cannot realistically afford the solution.",
+    "conversion_probability": "Low",
+    "recommended_action": "Explore if there's additional budget available or if this is for a starter/freemium tier. The need is real but budget is a critical blocker."
 }}
 
-IMPORTANT: Respond ONLY with valid JSON. Base scores on the actual input values provided."""
+CRITICAL: A $75 budget should NEVER score above 5/20. Be honest about deal size limitations."""
 
     try:
         response_text = generate_with_groq(prompt)
@@ -363,6 +399,7 @@ IMPORTANT: Respond ONLY with valid JSON. Base scores on the actual input values 
 # Company Intel Models
 class CompanyIntelRequest(BaseModel):
     company_name: str
+    product_context: Optional[str] = None  # Optional: Your product for fit analysis
 
 class NewsItem(BaseModel):
     headline: str
@@ -381,12 +418,19 @@ class Strategy(BaseModel):
     pitch_points: List[str]
     reasoning: str
 
+class ProductFit(BaseModel):
+    score: int  # 1-10 fit score
+    verdict: str  # "Excellent Fit", "Good Fit", "Moderate Fit", "Low Fit"
+    reasons: List[str]  # Why they're a fit
+    suggested_angle: str  # Best approach to pitch
+
 class CompanyIntelResponse(BaseModel):
     company_name: str
     financial_health: FinancialHealth
     news: List[NewsItem]
     strategy: Strategy
     cold_email: str
+    product_fit: Optional[ProductFit] = None  # Only present if product_context provided
 
 def get_financial_data(company_name: str) -> dict:
     """Fetch financial data from Yahoo Finance"""
@@ -430,15 +474,32 @@ def get_financial_data(company_name: str) -> dict:
         else:
             health = "At Risk"
         
+        # Fetch additional data for deeper analysis
+        business_summary = info.get('longBusinessSummary', '')[:500] if info.get('longBusinessSummary') else ''
+        industry = info.get('industry', sector)
+        employees = info.get('fullTimeEmployees', 0)
+        employees_str = f"{employees:,}" if employees else "N/A"
+        revenue_growth = info.get('revenueGrowth', 0)
+        revenue_growth_str = f"{revenue_growth*100:+.1f}%" if revenue_growth else "N/A"
+        profit_margin = info.get('profitMargins', 0)
+        profit_str = f"{profit_margin*100:.1f}%" if profit_margin else "N/A"
+        
         return {
             "stock_price": f"${price}" if price != 'N/A' else "N/A",
             "market_cap": market_cap_str,
             "change_52w": change_str,
             "sector": sector,
             "health_score": health,
+            # NEW: Additional data for deep analysis
+            "industry": industry,
+            "business_summary": business_summary,
+            "employees": employees_str,
+            "revenue_growth": revenue_growth_str,
+            "profit_margin": profit_str,
         }
     except:
-        return {"stock_price": "N/A", "market_cap": "N/A", "change_52w": "N/A", "sector": "Technology", "health_score": "Unknown"}
+        return {"stock_price": "N/A", "market_cap": "N/A", "change_52w": "N/A", "sector": "Technology", "health_score": "Unknown", 
+                "industry": "Unknown", "business_summary": "", "employees": "N/A", "revenue_growth": "N/A", "profit_margin": "N/A"}
 
 def get_news_headlines(company_name: str) -> List[dict]:
     """Fetch news headlines for the company"""
@@ -458,9 +519,11 @@ def get_news_headlines(company_name: str) -> List[dict]:
 
 @app.post("/intel", response_model=CompanyIntelResponse)
 async def get_company_intel(request: CompanyIntelRequest):
-    """Generate Company Intelligence BattleCard"""
+    """Generate Company Intelligence BattleCard with optional Product Fit Analysis"""
     
     company_name = request.company_name.strip()
+    product_context = request.product_context.strip() if request.product_context else None
+    
     if not company_name:
         raise HTTPException(status_code=400, detail="Company name is required")
     
@@ -469,20 +532,79 @@ async def get_company_intel(request: CompanyIntelRequest):
     
     headlines_text = "\n".join([f"- {h['headline']}" for h in headlines])
     
+    # Build prompt with optional product fit section
+    product_fit_section = ""
+    product_fit_json = ""
+    extra_instruction = ""
+    if product_context and len(product_context.strip()) >= 3:
+        product_fit_section = f"""
+
+PRODUCT YOU ARE SELLING: {product_context}
+
+PRODUCT-COMPANY FIT ANALYSIS TASK:
+You must critically analyze whether {company_name} would be a good customer for "{product_context}".
+
+WHAT {company_name.upper()} DOES: Consider their sector ({financial_data['sector']}), their business model, and recent news.
+
+ANALYSIS CRITERIA:
+1. INDUSTRY MATCH: Does {company_name}'s industry ({financial_data['sector']}) have a genuine need for {product_context}?
+2. BUSINESS RELEVANCE: Would {product_context} solve a real problem for {company_name}?
+3. FINANCIAL CAPACITY: Can they afford it? (Market Cap: {financial_data['market_cap']})
+4. TIMING: Do recent news signals suggest this is a good time to pitch?
+
+STRICT SCORING RULES:
+- 9-10: PERFECT - The product directly solves a known problem in their industry (e.g., CRM software → Salesforce)
+- 7-8: STRONG - The product is clearly useful for their business operations
+- 5-6: MODERATE - There's a plausible use case but not obvious
+- 3-4: WEAK - The product is tangentially related at best
+- 1-2: POOR - No logical connection between product and company
+
+IMPORTANT: If the product description is vague or doesn't clearly relate to {company_name}'s business, give a LOWER score (3-5). Be skeptical, not optimistic."""
+        product_fit_json = """,
+    "product_fit": {
+        "score": 6,
+        "verdict": "Moderate Fit",
+        "reasons": ["Reason based on industry analysis", "Reason based on business relevance", "Reason based on timing/news"],
+        "suggested_angle": "Specific pitch strategy if pursuing"
+    }"""
+        extra_instruction = "\n6. CRITICAL Product Fit analysis - be skeptical and give an honest score (1-10)"
+    elif product_context:
+        # Product description too short
+        product_fit_section = ""
+        product_fit_json = ""
+        extra_instruction = ""
+        product_context = None  # Reset to skip fit analysis
+    
+    # Build comprehensive company profile from real data
+    company_profile = f"""
+COMPANY PROFILE (Real-time data from Yahoo Finance):
+- Name: {company_name}
+- Industry: {financial_data.get('industry', financial_data['sector'])}
+- Sector: {financial_data['sector']}
+- Employees: {financial_data.get('employees', 'N/A')}
+- Revenue Growth: {financial_data.get('revenue_growth', 'N/A')}
+- Profit Margin: {financial_data.get('profit_margin', 'N/A')}
+- Stock Price: {financial_data['stock_price']}
+- Market Cap: {financial_data['market_cap']}
+- 52-Week Performance: {financial_data['change_52w']}
+- Financial Health: {financial_data['health_score']}
+
+BUSINESS DESCRIPTION:
+{financial_data.get('business_summary', 'No description available')}
+"""
+
     prompt = f"""You are a Senior Sales Director analyzing this company for a sales approach.
+{company_profile}
 
-COMPANY: {company_name}
-FINANCIAL DATA: Stock: {financial_data['stock_price']}, Market Cap: {financial_data['market_cap']}, 52W Change: {financial_data['change_52w']}, Sector: {financial_data['sector']}
-
-RECENT NEWS:
-{headlines_text}
+RECENT NEWS (from News API):
+{headlines_text}{product_fit_section}
 
 Generate:
 1. Sentiment for each headline (positive/negative/neutral)
 2. Strategic approach: "cost_optimization" if challenges detected, "scaling_growth" if growth signals
 3. Brief reasoning for approach
 4. 3 tactical pitch points
-5. Short personalized cold email opener (2-3 sentences)
+5. Short personalized cold email opener (2-3 sentences){extra_instruction}
 
 RESPOND IN EXACT JSON:
 {{
@@ -490,11 +612,11 @@ RESPOND IN EXACT JSON:
     "approach": "cost_optimization" or "scaling_growth",
     "reasoning": "Brief explanation...",
     "pitch_points": ["Point 1", "Point 2", "Point 3"],
-    "cold_email": "Email opener..."
+    "cold_email": "Email opener..."{product_fit_json}
 }}"""
-
+    
     try:
-        response_text = generate_with_groq(prompt, 1000)
+        response_text = generate_with_groq(prompt, 1500 if product_context else 1000)
         result = parse_json_response(response_text)
         
         news_items = [NewsItem(headline=n.get("headline", ""), sentiment=n.get("sentiment", "neutral"), 
@@ -503,6 +625,17 @@ RESPOND IN EXACT JSON:
         
         if not news_items:
             news_items = [NewsItem(headline=h["headline"], sentiment="neutral", source=h.get("source")) for h in headlines]
+        
+        # Parse product fit if provided
+        product_fit = None
+        if product_context and "product_fit" in result:
+            pf = result["product_fit"]
+            product_fit = ProductFit(
+                score=int(pf.get("score", 5)),
+                verdict=pf.get("verdict", "Moderate Fit"),
+                reasons=pf.get("reasons", []),
+                suggested_angle=pf.get("suggested_angle", "")
+            )
         
         return CompanyIntelResponse(
             company_name=company_name.title(),
@@ -513,9 +646,13 @@ RESPOND IN EXACT JSON:
                 pitch_points=result.get("pitch_points", []),
                 reasoning=result.get("reasoning", "")
             ),
-            cold_email=result.get("cold_email", "")
+            cold_email=result.get("cold_email", ""),
+            product_fit=product_fit
         )
-    except:
+    except Exception as e:
+        import traceback
+        print(f"ERROR in /intel endpoint: {e}")
+        traceback.print_exc()
         return CompanyIntelResponse(
             company_name=company_name.title(),
             financial_health=FinancialHealth(**financial_data),
@@ -525,7 +662,8 @@ RESPOND IN EXACT JSON:
                 pitch_points=["Accelerate digital transformation", "Unlock new revenue streams", "Outpace competitors"],
                 reasoning=f"Based on {company_name}'s market position, a growth-focused approach is recommended."
             ),
-            cold_email=f"I noticed {company_name} is making strategic moves. Our solution has helped similar companies achieve 40% faster time-to-value. Worth a quick chat?"
+            cold_email=f"I noticed {company_name} is making strategic moves. Our solution has helped similar companies achieve 40% faster time-to-value. Worth a quick chat?",
+            product_fit=None
         )
 
 
